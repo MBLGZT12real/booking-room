@@ -76,6 +76,7 @@ $roles = $db->fetchAll(
         'superadmin' => ['color' => 'danger',  'icon' => 'bi-patch-check-fill',   'bg' => '#dc3545'],
         'admin'      => ['color' => 'primary',  'icon' => 'bi-person-badge-fill',  'bg' => '#0d6efd'],
         'operator'   => ['color' => 'success',  'icon' => 'bi-person-workspace',   'bg' => '#198754'],
+        'staff'      => ['color' => 'warning',  'icon' => 'bi-person-workspace',   'bg' => '#e3f91a']
     ];
     $defaultStyle = ['color' => 'secondary', 'icon' => 'bi-person-fill', 'bg' => '#6c757d'];
     ?>

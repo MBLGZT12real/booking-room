@@ -20,7 +20,7 @@ class Notification
         $admins = $db->fetchAll(
             "SELECT u.id FROM users u
              JOIN roles r ON u.role_id = r.id
-             WHERE r.slug IN ('superadmin', 'admin', 'operator') AND u.is_active = 1"
+             WHERE r.slug IN ('superadmin', 'admin', 'operator', 'staff') AND u.is_active = 1"
         );
 
         foreach ($admins as $admin) {

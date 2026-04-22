@@ -99,6 +99,7 @@ $roles = $db->fetchAll("SELECT id, name FROM roles WHERE is_active = 1 ORDER BY 
         'superadmin' => 'danger',
         'admin'      => 'primary',
         'operator'   => 'success',
+        'staff'      => 'warning'
     ];
     // Find active role name for display
     $activeRoleName = '';

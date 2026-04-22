@@ -14,3 +14,4 @@ define('MAIL_FROM_EMAIL',      'no-reply@yourdomain.com');
 define('MAIL_FROM_NAME',       'Company - Booking Ruangan');
 define('MAIL_REPLY_TO',        '');
 define('MAIL_DEBUG',           0); // 0=off, 2=verbose (dev only)
+?>
