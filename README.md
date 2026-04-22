@@ -144,10 +144,10 @@ After importing `seed.sql`, use these credentials to log in at `/login.php`:
 
 | Username | Password | Role |
 |---|---|---|
-| `superadmin` | `superadmin@123` | Super Administrator |
+| `superadmin` | `superadmin@123` | Super Admin |
 | `admin` | `admin123` | Administrator |
-| `operator1` | `operator123` | Operator Satu |
-| `staff1` | `ap1208` | Staff Satu |
+| `operator1` | `operator123` | Operator |
+| `staff1` | `ap1208` | Staff |
 
 > **⚠️ Change all passwords immediately after first login.**
 
