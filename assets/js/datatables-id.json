@@ -1,0 +1,108 @@
+{
+    "decimal": ",",
+    "emptyTable": "Tidak ada data yang tersedia",
+    "info": "Menampilkan _START_ hingga _END_ dari _TOTAL_ entri",
+    "infoEmpty": "Menampilkan 0 hingga 0 dari 0 entri",
+    "infoFiltered": "(disaring dari _MAX_ total entri)",
+    "infoThousands": ".",
+    "lengthMenu": "Tampilkan _MENU_ entri",
+    "loadingRecords": "Memuat...",
+    "processing": "Memproses...",
+    "search": "Cari:",
+    "zeroRecords": "Tidak ditemukan data yang cocok",
+    "thousands": ".",
+    "paginate": {
+        "first": "Pertama",
+        "last": "Terakhir",
+        "next": "Berikutnya",
+        "previous": "Sebelumnya"
+    },
+    "aria": {
+        "sortAscending": ": aktifkan untuk mengurutkan kolom ke atas",
+        "sortDescending": ": aktifkan untuk mengurutkan kolom ke bawah"
+    },
+    "select": {
+        "rows": {
+            "_": "%d baris dipilih",
+            "0": "",
+            "1": "1 baris dipilih"
+        },
+        "cells": {
+            "1": "1 sel dipilih",
+            "_": "%d sel dipilih"
+        },
+        "columns": {
+            "1": "1 kolom dipilih",
+            "_": "%d kolom dipilih"
+        }
+    },
+    "buttons": {
+        "print": "Cetak",
+        "copy": "Salin",
+        "csv": "CSV",
+        "excel": "Excel",
+        "pdf": "PDF",
+        "colvis": "Kolom",
+        "pageLength": {
+            "-1": "Tampilkan semua baris",
+            "_": "Tampilkan %d baris"
+        }
+    },
+    "autoFill": {
+        "cancel": "Batal",
+        "fill": "Isi semua sel dengan <i>%d<\/i>",
+        "fillHorizontal": "Isi sel secara horizontal",
+        "fillVertical": "Isi sel secara vertikal"
+    },
+    "searchBuilder": {
+        "add": "Tambah Kondisi",
+        "button": {
+            "0": "Pembuat Pencarian",
+            "_": "Pembuat Pencarian (%d)"
+        },
+        "clearAll": "Hapus Semua",
+        "condition": "Kondisi",
+        "conditions": {
+            "date": {
+                "after": "Setelah",
+                "before": "Sebelum",
+                "between": "Antara",
+                "empty": "Kosong",
+                "equals": "Sama dengan",
+                "not": "Bukan",
+                "notBetween": "Tidak antara",
+                "notEmpty": "Tidak kosong"
+            },
+            "number": {
+                "between": "Antara",
+                "empty": "Kosong",
+                "equals": "Sama dengan",
+                "gt": "Lebih besar dari",
+                "gte": "Lebih besar dari atau sama dengan",
+                "lt": "Kurang dari",
+                "lte": "Kurang dari atau sama dengan",
+                "not": "Bukan",
+                "notBetween": "Tidak antara",
+                "notEmpty": "Tidak kosong"
+            },
+            "string": {
+                "contains": "Mengandung",
+                "empty": "Kosong",
+                "endsWith": "Diakhiri dengan",
+                "equals": "Sama dengan",
+                "not": "Bukan",
+                "notEmpty": "Tidak kosong",
+                "startsWith": "Dimulai dengan"
+            }
+        },
+        "data": "Data",
+        "deleteTitle": "Hapus aturan penyaringan",
+        "logicAnd": "Dan",
+        "logicOr": "Atau",
+        "title": {
+            "0": "Pembuat Pencarian",
+            "_": "Pembuat Pencarian (%d)"
+        },
+        "value": "Nilai"
+    }
+}

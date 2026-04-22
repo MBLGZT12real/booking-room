@@ -1,0 +1,39 @@
+# ============================================================
+# Booking Room System — .gitignore
+# ============================================================
+
+# --- Sensitive config (NEVER commit these) ---
+config/config.php
+config/database.php
+config/mailer.php
+config/secrets.php
+
+# --- Debug & dev-only files ---
+debug.php
+debug-booking.php
+admin/debug-admin.php
+database/gen-passwords.php
+
+# --- Claude Code IDE settings ---
+.claude/
+
+# --- User uploads (keep folder structure via .gitkeep) ---
+uploads/rooms/*
+uploads/avatars/*
+!uploads/rooms/.gitkeep
+!uploads/avatars/.gitkeep
+
+# --- Logs ---
+logs/
+*.log
+
+# --- OS & editor artifacts ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- PHP artifacts ---
+*.phar
