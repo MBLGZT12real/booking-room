@@ -660,7 +660,7 @@ if (isPost()) {
 </div>
 
 <footer class="text-center py-3 text-muted small mt-4">
-    &copy; <?= date('Y') ?> <?= e($appName) ?>
+    &copy; <?= date('Y') ?> | <?= e($appName) ?>
 </footer>
 
 <!-- Modal Detail Ruangan -->

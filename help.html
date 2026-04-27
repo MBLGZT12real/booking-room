@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Interaktif 7 Room Book</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Chart Container Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        /* Custom UI Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .step-active {
+            border-left: 4px solid #2563eb;
+            background-color: #eff6ff;
+            font-weight: 600;
+        }
+        .tab-active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .room-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+            transition: all 0.2s;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- Chosen Palette: Professional Corporate Blue (Slate-800 text, Blue-600 accents, Slate-50 background) -->
+    <!-- Application Structure Plan: A tab-based SPA dashboard. 1) 'Ikhtisar & Ketentuan' provides the core rules upfront. 2) 'Alur Interaktif' turns the sequential booking process into a clickable, step-by-step interactive explorer to prevent cognitive overload. 3) 'Simulasi Data' uses Chart.js to explain WHY certain rules exist (e.g., high demand for approval rooms) through visual data. This layout maps the static manual into a task-oriented exploration flow. -->
+    <!-- Visualization & Content Choices: 
+         1. Rule List -> Grid of Cards (Goal: Organize & Inform. Interaction: Hover. Justification: Chunking info makes it digestible. No SVG, used Unicode). 
+         2. Booking Steps -> Interactive Sidebar Tabs (Goal: Inform process. Interaction: Click to reveal steps. Justification: Better than long scrolling text).
+         3. Demand context -> Bar Chart (Goal: Compare room demand to explain Approval policy. Interaction: Hover tooltips. Justification: Visualizes the rationale behind the FCFS vs Approval rule. Library: Chart.js). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🏢</span>
+                    <span class="font-bold text-xl tracking-tight">7 Room Book <span class="font-light text-blue-200">Interactive Guide</span></span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="flex space-x-4">
+                        <button onclick="switchTab('overview')" id="tab-overview" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition tab-active text-white bg-blue-700">Ikhtisar & Ketentuan</button>
+                        <button onclick="switchTab('flow')" id="tab-flow" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition">Alur Pemesanan</button>
+                        <button onclick="switchTab('data')" id="tab-data" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition">Simulasi Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Nav (Simple) -->
+    <div class="md:hidden bg-blue-700 flex justify-around p-2 text-white text-sm">
+        <button onclick="switchTab('overview')" class="font-bold underline" id="mtab-overview">Ketentuan</button>
+        <button onclick="switchTab('flow')" id="mtab-flow">Alur</button>
+        <button onclick="switchTab('data')" id="mtab-data">Data</button>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[80vh]">
+
+        <!-- VIEW: OVERVIEW & RULES -->
+        <section id="view-overview" class="fade-in block">
+            <div class="mb-8 text-center max-w-3xl mx-auto">
+                <h1 class="text-3xl font-bold text-slate-900 mb-4">Selamat Datang di 7 Room Book</h1>
+                <p class="text-lg text-slate-600">
+                    Aplikasi ini adalah simulasi interaktif dari Buku Panduan Pengguna (User Manual) sistem pemesanan ruangan internal Seven Event. 
+                    Bagian ini menjelaskan ketentuan dasar yang wajib Anda pahami sebelum menggunakan fasilitas *meeting room*.
+                </p>
+            </div>
+
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-2">📌 Ketentuan Penting</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Rule 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 room-card">
+                    <div class="text-4xl mb-4 text-blue-500">📧</div>
+                    <h3 class="text-lg font-bold mb-2">Email Korporat</h3>
+                    <p class="text-sm text-slate-600">Anda tidak perlu membuat akun, namun <strong>WAJIB</strong> menggunakan email berakhiran <code class="bg-slate-100 px-1 py-0.5 rounded text-blue-600">@seven-event.com</code> saat mengisi data pemesanan.</p>
+                </div>
+                
+                <!-- Rule 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 room-card">
+                    <div class="text-4xl mb-4 text-green-500">⚡</div>
+                    <h3 class="text-lg font-bold mb-2">Sistem FCFS</h3>
+                    <p class="text-sm text-slate-600">Untuk ruangan standar, pemesanan bersifat <strong>First Come First Serve</strong>. Siapa yang lebih dulu *booking* di sistem, dia yang mendapatkan slot waktunya secara otomatis.</p>
+                </div>
+
+                <!-- Rule 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 room-card border-t-4 border-t-yellow-400">
+                    <div class="text-4xl mb-4 text-yellow-500">⏳</div>
+                    <h3 class="text-lg font-bold mb-2">Perlu Persetujuan</h3>
+                    <p class="text-sm text-slate-600">Ruangan besar (<strong>GIIAS Room</strong> & <strong>GJAW Room + GIICOMVEC</strong>) membutuhkan proses <em>Approval</em> dari Operator. Status Anda akan menunggu persetujuan terlebih dahulu.</p>
+                </div>
+
+                <!-- Rule 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 room-card">
+                    <div class="text-4xl mb-4 text-purple-500">✅</div>
+                    <h3 class="text-lg font-bold mb-2">Wajib Check-In</h3>
+                    <p class="text-sm text-slate-600">Agar jadwal ruangan tidak hangus, Anda <strong>wajib</strong> melakukan Check-in pada hari H melalui link di email, atau meminta bantuan Operator.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW: INTERACTIVE FLOW -->
+        <section id="view-flow" class="fade-in hidden">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Alur Pemesanan Interaktif</h2>
+                <p class="text-slate-600 max-w-4xl">
+                    Bagian ini memandu Anda menelusuri proses pemesanan dari awal hingga akhir. Klik pada setiap tahapan di menu sebelah kiri untuk melihat detail tampilan antarmuka, tindakan yang perlu dilakukan, dan hasil dari tindakan tersebut.
+                </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-6 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                
+                <!-- Sidebar Steps -->
+                <div class="md:w-1/3 bg-slate-50 border-r border-slate-200 p-0">
+                    <ul class="flex flex-col w-full" id="step-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Step Content -->
+                <div class="md:w-2/3 p-6 lg:p-8" id="step-content">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW: DATA SIMULATION -->
+        <section id="view-data" class="fade-in hidden">
+            <div class="mb-8 max-w-4xl">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Simulasi Data Penggunaan & Logika Sistem</h2>
+                <p class="text-slate-600 mb-4">
+                    Mengapa sistem membedakan ruangan yang <strong>Langsung Dikonfirmasi (FCFS)</strong> dan yang <strong>Perlu Approval</strong>? Visualisasi data di bawah ini mensimulasikan volume permintaan (*demand*) dari berbagai ruangan untuk memberikan konteks pada aturan bisnis tersebut.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-2 text-center">Rata-rata Permintaan Booking per Bulan</h3>
+                <p class="text-sm text-slate-500 text-center mb-6">Ruangan dengan kapasitas besar dan fungsi strategis memiliki tingkat pemesanan yang jauh lebih tinggi.</p>
+                
+                <!-- MANDATORY CHART CONTAINER IMPLEMENTATION -->
+                <div class="chart-container">
+                    <canvas id="demandChart"></canvas>
+                </div>
+
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-blue-900 border border-blue-200">
+                    <strong>💡 Analisis Sistem:</strong> Grafik di atas menunjukkan bahwa <strong>GIIAS Room</strong> dan <strong>GJAW & GIICOMVEC Room</strong> memiliki beban permintaan tertinggi. Oleh karena itu, *System Architect* merancang fitur <strong>Approval Operator</strong> khusus untuk ruangan tersebut guna mencegah monopoli dan memastikan prioritas rapat eksekutif terpenuhi. Sementara <strong>Cubicle Room</strong> beroperasi optimal dengan sistem FCFS (otomatis).
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm">
+        <p>&copy; 2026 7 Room Book Internal System - Interactive Documentation.</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. STATE & DATA MANAGEMENT ---
+        
+        // Navigation State
+        let currentTab = 'overview';
+        let currentStep = 0;
+
+        // Steps Data for Interactive Flow
+        const stepsData = [
+            {
+                icon: "🚪",
+                title: "1. Memilih Ruangan",
+                shortTitle: "Pilih Ruang",
+                description: "Pada halaman utama, Anda disajikan daftar ruangan. Perhatikan kapasitas dan fasilitasnya sebelum memilih.",
+                details: `
+                    <div class="space-y-4">
+                        <div class="p-4 border rounded bg-slate-50 flex items-start gap-4">
+                            <div class="text-3xl">ℹ️</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800">Detail Fasilitas</h4>
+                                <p class="text-sm text-slate-600">Klik ikon (i) biru pada kartu ruangan untuk melihat fasilitas spesifik (Proyektor, LAN Port, dll).</p>
+                            </div>
+                        </div>
+                        <div class="p-4 border border-yellow-200 rounded bg-yellow-50 flex items-start gap-4">
+                            <div class="text-3xl">⚠️</div>
+                            <div>
+                                <h4 class="font-bold text-yellow-800">Label 'Perlu Approval'</h4>
+                                <p class="text-sm text-yellow-700">Ruangan dengan label kuning ini tidak otomatis Anda dapatkan. Anda harus menunggu Operator menyetujuinya setelah formulir dikirim.</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                icon: "📅",
+                title: "2. Tanggal & Waktu",
+                shortTitle: "Jadwal",
+                description: "Tentukan hari dan blok waktu spesifik untuk penggunaan ruangan.",
+                details: `
+                    <div class="space-y-3 text-slate-700">
+                        <p><strong>A. Pilih Tanggal:</strong> Klik ikon kalender untuk menetapkan hari H.</p>
+                        <p><strong>B. Pilih Slot Waktu:</strong> Sistem membagi waktu dalam blok <strong>30 menit</strong>.</p>
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800">
+                            <strong>💡 Tips Pemesanan Durasi Panjang:</strong><br>
+                            Pilih kotak secara berurutan. Misalnya, klik <code class="bg-white px-1 rounded">14:00 - 14:30</code> kemudian langsung klik <code class="bg-white px-1 rounded">14:30 - 15:00</code> untuk mem-booking selama 1 jam penuh.
+                        </div>
+                    </div>
+                `
+            },
+            {
+                icon: "👤",
+                title: "3. Mengisi Data",
+                shortTitle: "Formulir",
+                description: "Lengkapi formulir pemesanan. Validasi ketat diterapkan pada tahap ini.",
+                details: `
+                    <div class="bg-white border border-red-200 rounded p-4 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                        <h4 class="font-bold text-slate-800 mb-2">Validasi Sistem:</h4>
+                        <ul class="list-disc pl-5 space-y-2 text-sm text-slate-600">
+                            <li><strong>Domain Email:</strong> Sistem akan menolak jika email tidak menggunakan akhiran <code class="font-bold text-red-600">@seven-event.com</code>.</li>
+                            <li><strong>Jumlah Peserta:</strong> Wajib diisi (tidak boleh kosong).</li>
+                            <li><strong>Tujuan Meeting:</strong> Minimal membutuhkan 5 karakter penjelasan.</li>
+                        </ul>
+                    </div>
+                    <button class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition w-full">Kirim Booking (Simulasi)</button>
+                `
+            },
+            {
+                icon: "📧",
+                title: "4. Notifikasi Email",
+                shortTitle: "Notifikasi",
+                description: "Status pesanan akan dikomunikasikan via email secara *real-time*.",
+                details: `
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="border rounded-lg p-4 bg-green-50 border-green-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-green-800">Skenario A: Ruang Standar</span>
+                                <span class="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">Langsung Dikonfirmasi</span>
+                            </div>
+                            <p class="text-sm text-green-700">Mendapat email "Disetujui" beserta <strong>Link Check-in</strong> berwarna hijau di dalam email.</p>
+                        </div>
+                        
+                        <div class="border rounded-lg p-4 bg-yellow-50 border-yellow-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-yellow-800">Skenario B: Ruang Besar</span>
+                                <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Menunggu Approval</span>
+                            </div>
+                            <p class="text-sm text-yellow-700">Mendapat pemberitahuan untuk menunggu. Operator akan mengecek di <em>Dashboard</em>. Jika operator klik Approve, Anda akan menerima email Skenario A.</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                icon: "✅",
+                title: "5. Proses Check-In",
+                shortTitle: "Check-In",
+                description: "Tindakan wajib pada hari H agar pesanan ruangan Anda tidak dibatalkan otomatis (hangus).",
+                details: `
+                    <div class="flex flex-col gap-4 mt-2">
+                        <div class="flex items-start gap-3 p-3 border rounded">
+                            <div class="text-2xl mt-1">📱</div>
+                            <div>
+                                <h4 class="font-bold">Cara 1: Mandiri</h4>
+                                <p class="text-sm text-slate-600">Buka email konfirmasi dari perangkat Anda, lalu klik tombol <strong class="text-green-600">Buka Link Check-in</strong> sesaat sebelum rapat dimulai.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 border rounded">
+                            <div class="text-2xl mt-1">🧑‍💻</div>
+                            <div>
+                                <h4 class="font-bold">Cara 2: Bantuan Operator</h4>
+                                <p class="text-sm text-slate-600">Jika kesulitan, lapor ke Operator. Operator akan masuk ke menu <strong>Manajemen Check-in/out</strong> di Dashboard mereka dan mengklik tombol Check-in untuk Anda.</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // --- 2. CORE INTERACTION HANDLING ---
+
+        // Function to switch main tabs
+        function switchTab(tabId) {
+            // Update state
+            currentTab = tabId;
+
+            // Hide all views
+            document.getElementById('view-overview').classList.add('hidden');
+            document.getElementById('view-flow').classList.add('hidden');
+            document.getElementById('view-data').classList.add('hidden');
+
+            // Reset Desktop Nav styles
+            const desktopTabs = ['tab-overview', 'tab-flow', 'tab-data'];
+            desktopTabs.forEach(id => {
+                document.getElementById(id).classList.remove('tab-active', 'bg-blue-700', 'text-white');
+                document.getElementById(id).classList.add('text-blue-100');
+            });
+
+            // Reset Mobile Nav styles
+            const mobileTabs = ['mtab-overview', 'mtab-flow', 'mtab-data'];
+            mobileTabs.forEach(id => {
+                document.getElementById(id).classList.remove('font-bold', 'underline');
+            });
+
+            // Show selected view & highlight nav
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            if(document.getElementById(`tab-${tabId}`)) {
+                document.getElementById(`tab-${tabId}`).classList.remove('text-blue-100');
+                document.getElementById(`tab-${tabId}`).classList.add('tab-active', 'bg-blue-700', 'text-white');
+            }
+            if(document.getElementById(`mtab-${tabId}`)) {
+                document.getElementById(`mtab-${tabId}`).classList.add('font-bold', 'underline');
+            }
+
+            // Render Chart only if Data tab is opened to ensure canvas is visible
+            if (tabId === 'data' && !window.myChartInstance) {
+                initChart();
+            }
+        }
+
+        // Function to render the Interactive Step List (Sidebar)
+        function renderStepList() {
+            const listContainer = document.getElementById('step-list');
+            listContainer.innerHTML = '';
+
+            stepsData.forEach((step, index) => {
+                const li = document.createElement('li');
+                const isActive = index === currentStep;
+                
+                li.className = `cursor-pointer p-4 border-b border-slate-200 transition-colors hover:bg-slate-100 ${isActive ? 'step-active' : ''}`;
+                li.onclick = () => selectStep(index);
+                
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">${step.icon}</span>
+                        <span class="${isActive ? 'text-blue-700' : 'text-slate-600'}">${step.shortTitle}</span>
+                    </div>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // Function to select and display a specific step
+        function selectStep(index) {
+            currentStep = index;
+            renderStepList(); // Re-render sidebar to update active state
+            
+            const step = stepsData[index];
+            const contentContainer = document.getElementById('step-content');
+            
+            // Add animation class by resetting the DOM element
+            contentContainer.classList.remove('fade-in');
+            void contentContainer.offsetWidth; // trigger reflow
+            contentContainer.classList.add('fade-in');
+
+            contentContainer.innerHTML = `
+                <div class="flex items-center gap-3 mb-4 text-blue-600">
+                    <span class="text-4xl">${step.icon}</span>
+                    <h3 class="text-2xl font-bold text-slate-800">${step.title}</h3>
+                </div>
+                <p class="text-lg text-slate-600 mb-6 pb-4 border-b border-slate-100">${step.description}</p>
+                <div class="text-base text-slate-800 leading-relaxed">
+                    ${step.details}
+                </div>
+                
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="${index === 0 ? 'invisible' : ''} px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 transition">← Sebelumnya</button>
+                    <button onclick="nextStep()" class="${index === stepsData.length - 1 ? 'hidden' : ''} px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Selanjutnya →</button>
+                </div>
+            `;
+        }
+
+        // Navigation helpers for steps
+        function nextStep() {
+            if (currentStep < stepsData.length - 1) selectStep(currentStep + 1);
+        }
+        function prevStep() {
+            if (currentStep > 0) selectStep(currentStep - 1);
+        }
+
+        // --- 3. CHART.JS IMPLEMENTATION ---
+        
+        function initChart() {
+            const ctx = document.getElementById('demandChart').getContext('2d');
+            
+            const data = {
+                labels: [
+                    'Cubicle Room (Kapasitas Kecil)', 
+                    'IMOS Room (Kapasitas Sedang)', 
+                    'GJAW Room (Kapasitas Sedang)',
+                    'GIIAS Room (Kapasitas Besar - APPROVAL)'
+                ],
+                datasets: [{
+                    label: 'Rata-rata Booking per Bulan',
+                    data: [45, 60, 85, 120],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.5)', // blue
+                        'rgba(59, 130, 246, 0.5)',
+                        'rgba(234, 179, 8, 0.5)',  // yellow/approval warning
+                        'rgba(239, 68, 68, 0.5)'   // red/high demand approval
+                    ],
+                    borderColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(59, 130, 246)',
+                        'rgb(234, 179, 8)',
+                        'rgb(239, 68, 68)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // MANDATORY: Allows container to dictate height
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { size: 14, family: 'sans-serif' },
+                            bodyFont: { size: 13, family: 'sans-serif' },
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Total Booking: ${context.raw} sesi/bulan`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Jumlah Sesi',
+                                color: '#64748b'
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                // MANDATORY: Label wrapping logic (approx 16 chars)
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 16) {
+                                        // Split label into arrays of strings for multi-line
+                                        const words = label.split(' ');
+                                        let lines = [];
+                                        let currentLine = '';
+                                        words.forEach(word => {
+                                            if ((currentLine + word).length > 16) {
+                                                lines.push(currentLine.trim());
+                                                currentLine = word + ' ';
+                                            } else {
+                                                currentLine += word + ' ';
+                                            }
+                                        });
+                                        lines.push(currentLine.trim());
+                                        return lines;
+                                    }
+                                    return label;
+                                },
+                                maxRotation: 0,
+                                minRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            };
+
+            window.myChartInstance = new Chart(ctx, config);
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            // Initialize Interactive Flow
+            renderStepList();
+            selectStep(0);
+        };
+
+    </script>
+</body>
+</html>
