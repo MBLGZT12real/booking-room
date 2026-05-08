@@ -5,6 +5,15 @@
 Options -Indexes
 ServerSignature Off
 
+# ---- Custom Error Pages ----
+# Apache 2.4 <If> — deteksi otomatis berdasarkan host
+<If "%{HTTP_HOST} == 'localhost'">
+    ErrorDocument 403 /booking-room/403.php
+</If>
+<Else>
+    ErrorDocument 403 /7booking-room/403.php
+</Else>
+
 # Enable URL Rewriting
 <IfModule mod_rewrite.c>
     RewriteEngine On

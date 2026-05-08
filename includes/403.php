@@ -16,7 +16,7 @@
     <div class="display-1 text-danger fw-bold">403</div>
     <h3 class="mt-2">Akses Ditolak</h3>
     <p class="text-muted">Anda tidak memiliki izin untuk mengakses halaman ini.</p>
-    <a href="<?= BASE_URL ?>/admin/" class="btn btn-primary">
+    <a href="<?= BASE_URL ?>/" class="btn btn-primary">
         <i class="bi bi-house me-1"></i> Kembali ke Dashboard
     </a>
 </div>

@@ -29,7 +29,7 @@ if (isPost() && verifyCsrf()) {
     if (empty($data['username'])) $errors[] = 'Username harus diisi.';
     if (empty($data['email']) || !isValidEmail($data['email'])) $errors[] = 'Email tidak valid.';
     if (!$data['role_id']) $errors[] = 'Role harus dipilih.';
-    if ($password && strlen($password) < 6) $errors[] = 'Password minimal 6 karakter.';
+    if ($password && strlen($password) < 8) $errors[] = 'Password minimal 8 karakter.';
     if ($password && $password !== $password2) $errors[] = 'Konfirmasi password tidak cocok.';
 
     if (!$errors) {

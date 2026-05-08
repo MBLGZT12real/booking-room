@@ -13,6 +13,7 @@ debug.php
 debug-booking.php
 admin/debug-admin.php
 database/gen-passwords.php
+_test_*.php
 
 # --- Claude Code IDE settings ---
 .claude/
@@ -26,6 +27,7 @@ uploads/avatars/*
 # --- Logs ---
 logs/
 *.log
+cron/logs/
 
 # --- OS & editor artifacts ---
 .DS_Store

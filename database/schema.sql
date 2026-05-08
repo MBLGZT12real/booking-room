@@ -215,14 +215,20 @@ CREATE TABLE `bookings` (
   `purpose` TEXT DEFAULT NULL,
   `notes_equipment` TEXT DEFAULT NULL COMMENT 'Catatan tambahan alat dalam ruangan',
   `notes_other` TEXT DEFAULT NULL COMMENT 'Catatan lainnya',
+  `recurring_group_id` VARCHAR(36) NULL DEFAULT NULL COMMENT 'UUID grup booking berulang (weekly/biweekly)',
+  `booked_by_admin` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 jika dibuat langsung oleh admin/operator',
   `status` ENUM('pending','confirmed','rejected','cancelled','completed') NOT NULL DEFAULT 'pending',
   `reject_reason` TEXT DEFAULT NULL,
+  `cancel_reason` TEXT DEFAULT NULL,
   `token` VARCHAR(128) NOT NULL,
   `token_expires_at` DATETIME DEFAULT NULL,
   `checkin_at` DATETIME DEFAULT NULL,
   `checkout_at` DATETIME DEFAULT NULL,
+  `checkout_reminder_sent_at` DATETIME NULL DEFAULT NULL COMMENT 'Timestamp terakhir email reminder checkout dikirim',
   `approved_by` INT(11) DEFAULT NULL,
   `approved_at` DATETIME DEFAULT NULL,
+  `cancelled_by` INT(11) DEFAULT NULL,
+  `cancelled_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -232,14 +238,17 @@ CREATE TABLE `bookings` (
   KEY `idx_bookings_status` (`status`),
   KEY `idx_bookings_room` (`room_id`),
   KEY `idx_bookings_conflict` (`room_id`, `booking_date`, `status`),
+  KEY `idx_recurring_group` (`recurring_group_id`),
   KEY `fk_booking_room` (`room_id`),
   KEY `fk_booking_dept` (`department_id`),
   KEY `fk_booking_type` (`meeting_type_id`),
   KEY `fk_booking_approver` (`approved_by`),
+  KEY `fk_booking_canceller` (`cancelled_by`),
   CONSTRAINT `fk_booking_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`),
   CONSTRAINT `fk_booking_dept` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_booking_type` FOREIGN KEY (`meeting_type_id`) REFERENCES `meeting_types` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_booking_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_booking_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_booking_canceller` FOREIGN KEY (`cancelled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -318,7 +327,7 @@ CREATE TABLE `login_attempts` (
 -- ============================================================
 CREATE TABLE `email_templates` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `type` VARCHAR(50) NOT NULL COMMENT 'booking_confirmation, booking_approved, booking_rejected, checkin_confirmation',
+  `type` VARCHAR(50) NOT NULL COMMENT 'booking_confirmation, booking_approved, booking_rejected, booking_cancelled, checkin_confirmation, checkout_reminder',
   `name` VARCHAR(100) NOT NULL,
   `subject` VARCHAR(255) NOT NULL,
   `body_html` TEXT NOT NULL,
@@ -355,3 +364,14 @@ CREATE TABLE `email_templates` (
 -- v1.3: Ganti booking_min_hours_before → booking_min_minutes_before (satuan menit)
 --       Untuk database yang sudah ada, jalankan:
 --       - database/migration_min_minutes_before.sql
+
+-- v1.4: Fitur booking berulang (recurring) dan booking oleh admin
+--       Kolom baru di tabel bookings: recurring_group_id, booked_by_admin
+--       Untuk database yang sudah ada, jalankan:
+--       - database/migration_recurring_bookings.sql
+
+-- v1.5: Auto check-out dan email reminder checkout
+--       Kolom baru di tabel bookings: checkout_reminder_sent_at
+--       Template email baru: checkout_reminder (ada di seed.sql INSERT IGNORE)
+--       Untuk database yang sudah ada, jalankan:
+--       - database/migration_auto_checkout.sql

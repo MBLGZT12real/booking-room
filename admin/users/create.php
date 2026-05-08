@@ -23,7 +23,7 @@ if (isPost() && verifyCsrf()) {
     if (empty($data['username'])) $errors[] = 'Username harus diisi.';
     if (empty($data['email']) || !isValidEmail($data['email'])) $errors[] = 'Email tidak valid.';
     if (empty($password)) $errors[] = 'Password harus diisi.';
-    if (strlen($password) < 6) $errors[] = 'Password minimal 6 karakter.';
+    if (strlen($password) < 8) $errors[] = 'Password minimal 8 karakter.';
     if ($password !== $password2) $errors[] = 'Konfirmasi password tidak cocok.';
     if (!$data['role_id']) $errors[] = 'Role harus dipilih.';
 
@@ -104,7 +104,7 @@ $roles = $db->fetchAll("SELECT id, name FROM roles WHERE is_active = 1 ORDER BY 
                             <div class="col-md-6">
                                 <label class="form-label">Password <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" name="password" id="pwd" required minlength="6" autocomplete="new-password">
+                                    <input type="password" class="form-control" name="password" id="pwd" required minlength="8" autocomplete="new-password">
                                     <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('pwd')">
                                         <i class="bi bi-eye"></i>
                                     </button>

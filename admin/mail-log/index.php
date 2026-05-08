@@ -5,6 +5,29 @@ Auth::requirePermission('maillog.view');
 $pageTitle = 'Mail Log';
 $db = db();
 
+// Handle resend
+if (isPost() && verifyCsrf() && Auth::can('maillog.view')) {
+    $logId = intVal(pParam('log_id'));
+    $log   = $db->fetch("SELECT * FROM mail_logs WHERE id = ?", [$logId]);
+    if ($log) {
+        $result = Mailer::send(
+            $log['recipient_email'],
+            $log['recipient_name'] ?? '',
+            $log['subject'],
+            $log['body'],
+            $log['booking_id']
+        );
+        flash($result['success'] ? 'success' : 'error',
+            $result['success']
+                ? 'Email berhasil dikirim ulang ke ' . $log['recipient_email'] . '.'
+                : 'Gagal kirim ulang: ' . $result['message']
+        );
+    } else {
+        flash('error', 'Log tidak ditemukan.');
+    }
+    redirect(BASE_URL . '/admin/mail-log/');
+}
+
 $page    = max(1, intVal(qParam('page', 1)));
 $perPage = DEFAULT_PER_PAGE;
 $search  = trim(qParam('search'));
@@ -53,6 +76,8 @@ $stats = [
             </ol>
         </nav>
     </div>
+
+    <?= showFlash() ?>
 
     <!-- Stats -->
     <div class="row g-3 mb-3">
@@ -149,10 +174,18 @@ $stats = [
                             </td>
                             <td class="small text-muted"><?= formatDatetimeId($log['sent_at']) ?></td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                        onclick="showBody(<?= htmlspecialchars(json_encode(['subject' => $log['subject'], 'body' => $log['body'], 'error' => $log['error_message']])) ?>)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            onclick="showBody(<?= htmlspecialchars(json_encode(['subject' => $log['subject'], 'body' => $log['body'], 'error' => $log['error_message']])) ?>)"
+                                            title="Lihat isi email">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick="confirmResend(<?= $log['id'] ?>, '<?= e($log['recipient_email']) ?>')"
+                                            title="Kirim ulang email">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -173,6 +206,37 @@ $stats = [
 </div>
 <?php include dirname(__DIR__) . '/layout/footer.php'; ?>
 
+<!-- Hidden Resend Form -->
+<form method="POST" id="resendForm">
+    <?= csrfField() ?>
+    <input type="hidden" name="log_id" id="resendLogId">
+</form>
+
+<!-- Resend Confirmation Modal -->
+<div class="modal fade" id="resendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-send text-primary me-2"></i>Kirim Ulang Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-1">Kirim ulang email ke:</p>
+                <p class="fw-semibold mb-0" id="resendTarget"></p>
+                <p class="text-muted small mt-1">Email baru akan dikirim dan dicatat sebagai log baru.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="resendConfirmBtn">
+                    <i class="bi bi-send me-1"></i>Kirim Ulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Body Preview Modal -->
 <div class="modal fade" id="bodyModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -190,6 +254,17 @@ $stats = [
 </div>
 
 <script>
+function confirmResend(logId, email) {
+    document.getElementById('resendLogId').value  = logId;
+    document.getElementById('resendTarget').textContent = email;
+    var modal = new bootstrap.Modal(document.getElementById('resendModal'));
+    document.getElementById('resendConfirmBtn').onclick = function () {
+        modal.hide();
+        document.getElementById('resendForm').submit();
+    };
+    modal.show();
+}
+
 function showBody(data) {
     document.getElementById('bodyModalTitle').textContent = data.subject;
     const frame = document.getElementById('bodyFrame');

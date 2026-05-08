@@ -208,13 +208,23 @@ class Auth
         self::startSession();
 
         if (empty($_SESSION['user_id'])) {
-            $redirect = urlencode($_SERVER['REQUEST_URI']);
+            // Strip base path (e.g. '/booking-room') dari REQUEST_URI agar tidak double saat login redirect
+            $basePath    = rtrim(parse_url(BASE_URL, PHP_URL_PATH) ?? '', '/');
+            $requestUri  = $_SERVER['REQUEST_URI'] ?? '/';
+            $appRelative = $basePath ? substr($requestUri, strlen($basePath)) : $requestUri;
+            $redirect    = urlencode($appRelative ?: '/admin/');
             header('Location: ' . BASE_URL . '/login.php?redirect=' . $redirect);
             exit;
         }
 
         // Check session timeout
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > SESSION_LIFETIME) {
+            self::logout();
+        }
+
+        // Check if user is still active in DB (catches admin-deactivated accounts)
+        $active = db()->fetchColumn("SELECT is_active FROM users WHERE id = ?", [$_SESSION['user_id']]);
+        if (!$active) {
             self::logout();
         }
 

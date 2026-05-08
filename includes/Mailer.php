@@ -257,6 +257,60 @@ class Mailer
     }
 
     /**
+     * Send checkout reminder email (triggered when booking end_time passes and customer hasn't checked out)
+     */
+    public static function sendCheckoutReminder(array $booking): array
+    {
+        $appName     = getSetting('app_name', APP_NAME);
+        $appUrl      = getSetting('app_url', BASE_URL);
+        $checkoutUrl = $appUrl . '/checkin.php?token=' . $booking['token'];
+
+        $tpl = self::renderTemplate('checkout_reminder', [
+            'app_name'     => $appName,
+            'booker_name'  => e($booking['booker_name']),
+            'booking_code' => e($booking['booking_code']),
+            'room_name'    => e($booking['room_name'] ?? '-'),
+            'booking_date' => formatDateId($booking['booking_date']),
+            'booking_time' => formatTimeRange($booking['start_time'], $booking['end_time']),
+            'checkout_url' => $checkoutUrl,
+            '_fallback_subject' => "[$appName] Pengingat Check-Out - " . $booking['booking_code'],
+            '_fallback_content' => '
+                <p>Halo <strong>' . e($booking['booker_name']) . '</strong>,</p>
+                <p>Waktu booking ruangan <strong>' . e($booking['room_name'] ?? '-') . '</strong> Anda telah berakhir.</p>
+                <p>Silakan klik link berikut untuk melakukan check-out:<br>
+                <a href="' . $checkoutUrl . '">' . $checkoutUrl . '</a></p>
+                <p>Jika tidak dilakukan, sistem akan otomatis check-out pada pukul 23:55.</p>',
+        ]);
+
+        return self::send($booking['booker_email'], $booking['booker_name'], $tpl['subject'], $tpl['body'], $booking['id']);
+    }
+
+    /**
+     * Send booking cancelled email
+     */
+    public static function sendBookingCancelled(array $booking, array $room = [], string $cancelledBy = ''): array
+    {
+        $appName  = getSetting('app_name', APP_NAME);
+        $roomName = $room['name'] ?? $booking['room_name'] ?? '-';
+
+        $cancelledBySection = $cancelledBy
+            ? '<p style="color:#6c757d;font-size:13px;margin-top:10px;">Dibatalkan oleh: <strong>' . e($cancelledBy) . '</strong></p>'
+            : '';
+
+        $tpl = self::renderTemplate('booking_cancelled', [
+            'app_name'             => $appName,
+            'booker_name'          => e($booking['booker_name']),
+            'booking_code'         => e($booking['booking_code']),
+            'room_name'            => e($roomName),
+            'booking_date'         => formatDateId($booking['booking_date']),
+            'booking_time'         => formatTimeRange($booking['start_time'], $booking['end_time']),
+            'cancelled_by_section' => $cancelledBySection,
+        ]);
+
+        return self::send($booking['booker_email'], $booking['booker_name'], $tpl['subject'], $tpl['body'], $booking['id']);
+    }
+
+    /**
      * Send booking rejected email
      */
     public static function sendBookingRejected(array $booking, array $room = [], string $reason = ''): array

@@ -6,22 +6,36 @@
 class Notification
 {
     /**
-     * Create notification for all admin/superadmin users
+     * Create notification for admins, filtered by permission.
+     * Superadmin always receives all notifications.
+     * Other roles only receive if they have $requiredPermission (when provided).
      */
     public static function createForAdmins(
         string $type,
         string $title,
         string $message,
-        ?int $bookingId = null
+        ?int $bookingId = null,
+        ?string $requiredPermission = null
     ): void {
         $db = db();
 
-        // Get all active admin and superadmin users
-        $admins = $db->fetchAll(
-            "SELECT u.id FROM users u
-             JOIN roles r ON u.role_id = r.id
-             WHERE r.slug IN ('superadmin', 'admin', 'operator', 'staff') AND u.is_active = 1"
-        );
+        if ($requiredPermission !== null) {
+            $admins = $db->fetchAll(
+                "SELECT DISTINCT u.id FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 LEFT JOIN role_permissions rp ON r.id = rp.role_id
+                 LEFT JOIN permissions p ON rp.permission_id = p.id AND p.is_active = 1
+                 WHERE u.is_active = 1
+                   AND (r.slug = 'superadmin' OR p.slug = ?)",
+                [$requiredPermission]
+            );
+        } else {
+            $admins = $db->fetchAll(
+                "SELECT u.id FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE r.slug IN ('superadmin', 'admin', 'operator', 'staff') AND u.is_active = 1"
+            );
+        }
 
         foreach ($admins as $admin) {
             $db->insert('notifications', [

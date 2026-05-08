@@ -35,7 +35,7 @@ function csrfField(): string
  */
 function verifyCsrf(): bool
 {
-    $token = $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
+    $token = $_POST['csrf_token'] ?? '';
     return !empty($token) && hash_equals(csrfToken(), $token);
 }
 
@@ -64,8 +64,13 @@ function redirect(string $url, int $statusCode = 302): void
  */
 function redirectBack(string $fallback = ''): void
 {
-    $url = $_SERVER['HTTP_REFERER'] ?? ($fallback ?: BASE_URL . '/admin/');
-    redirect($url);
+    $referer  = $_SERVER['HTTP_REFERER'] ?? '';
+    $baseHost = parse_url(BASE_URL, PHP_URL_HOST);
+    if ($referer && parse_url($referer, PHP_URL_HOST) === $baseHost) {
+        redirect($referer);
+    } else {
+        redirect($fallback ?: BASE_URL . '/admin/');
+    }
 }
 
 /**

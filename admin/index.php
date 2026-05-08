@@ -206,7 +206,7 @@ $pendingCount = $stats['pending'];
                         <div class="card-header bg-transparent border-0 pt-3 d-flex align-items-center justify-content-between">
                             <h6 class="fw-bold mb-0">
                                 <i class="bi bi-bookmark-star me-2 text-primary"></i>
-                                Booking Terbaru
+                                10 Booking Terbaru
                             </h6>
                             <a href="<?= BASE_URL ?>/admin/bookings/" class="btn btn-outline-primary btn-sm">
                                 Lihat Semua

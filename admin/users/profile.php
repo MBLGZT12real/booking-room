@@ -58,7 +58,7 @@ if (isPost() && verifyCsrf()) {
         if (!Auth::verifyPassword($currentPassword, $me['password'])) {
             $errors[] = 'Password saat ini tidak benar.';
         }
-        if (strlen($newPassword) < 6) $errors[] = 'Password baru minimal 6 karakter.';
+        if (strlen($newPassword) < 8) $errors[] = 'Password baru minimal 8 karakter.';
         if ($newPassword !== $confirmPassword) $errors[] = 'Konfirmasi password tidak cocok.';
 
         if (empty($errors)) {
@@ -182,16 +182,31 @@ if (isPost() && verifyCsrf()) {
                         <input type="hidden" name="action" value="change_password">
                         <div class="mb-3">
                             <label class="form-label">Password Saat Ini <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" name="current_password" required autocomplete="current-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="current_password" id="pwd_current" required autocomplete="current-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('pwd_current')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-sm-6">
                                 <label class="form-label">Password Baru <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" name="new_password" required minlength="6" autocomplete="new-password">
+                                <div class="input-group">
+                                    <input type="password" class="form-control" name="new_password" id="pwd_new" required minlength="8" autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('pwd_new')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" name="confirm_password" required autocomplete="new-password">
+                                <div class="input-group">
+                                    <input type="password" class="form-control" name="confirm_password" id="pwd_confirm" required autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('pwd_confirm')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-warning">
@@ -206,6 +221,11 @@ if (isPost() && verifyCsrf()) {
 </div>
 <?php include dirname(__DIR__) . '/layout/footer.php'; ?>
 <script>
+function togglePwd(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+}
+
 // Avatar preview
 document.getElementById('avatarInput')?.addEventListener('change', function() {
     const file = this.files[0];

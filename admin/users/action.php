@@ -65,8 +65,8 @@ if ($action === 'delete') {
     $newPassword = $_POST['new_password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if (strlen($newPassword) < 6) {
-        flash('error', 'Password minimal 6 karakter.');
+    if (strlen($newPassword) < 8) {
+        flash('error', 'Password minimal 8 karakter.');
     } elseif ($newPassword !== $confirmPassword) {
         flash('error', 'Konfirmasi password tidak cocok.');
     } else {

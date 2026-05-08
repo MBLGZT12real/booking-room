@@ -387,7 +387,8 @@ class BookingHelper
             'checkin',
             'Check-in: ' . $booking['room_name'],
             $booking['booker_name'] . ' telah check-in di ' . $booking['room_name'] . ' (' . formatTimeRange($booking['start_time'], $booking['end_time']) . ')',
-            $booking['id']
+            $booking['id'],
+            'checkin.manage'
         );
 
         return ['success' => true, 'booking' => $booking];
@@ -430,7 +431,8 @@ class BookingHelper
             'checkout',
             'Check-out: ' . $booking['room_name'],
             $booking['booker_name'] . ' telah check-out dari ' . $booking['room_name'],
-            $booking['id']
+            $booking['id'],
+            'checkin.manage'
         );
 
         return ['success' => true, 'booking' => $booking];
@@ -458,6 +460,152 @@ class BookingHelper
             $token = generateToken();
         } while ($db->exists('bookings', ['token' => $token]));
         return $token;
+    }
+
+    /**
+     * Create a booking from admin panel (bypasses date-range and min-minutes-before restrictions)
+     */
+    public static function createAdminBooking(array $data, ?string $recurringGroupId = null): array
+    {
+        $db = db();
+
+        $room = $db->fetch("SELECT * FROM rooms WHERE id = ? AND is_active = 1", [$data['room_id']]);
+        if (!$room) {
+            return ['success' => false, 'message' => 'Ruangan tidak ditemukan atau tidak aktif.'];
+        }
+
+        $date = $data['booking_date'];
+        $ts   = strtotime($date);
+
+        // Must still be a working day
+        $dayOfWeek = (int) date('w', $ts);
+        $wh = $db->fetch(
+            "SELECT id FROM working_hours WHERE day_of_week = ? AND is_working_day = 1 AND is_active = 1",
+            [$dayOfWeek]
+        );
+        if (!$wh) {
+            return ['success' => false, 'message' => $date . ': Bukan hari kerja.'];
+        }
+
+        // Must not be a holiday
+        if (self::isHoliday($date)) {
+            return ['success' => false, 'message' => $date . ': Hari libur.'];
+        }
+
+        if ($data['start_time'] >= $data['end_time']) {
+            return ['success' => false, 'message' => 'Waktu selesai harus setelah waktu mulai.'];
+        }
+
+        if (!empty($data['capacity_needed']) && $data['capacity_needed'] > $room['capacity']) {
+            return ['success' => false, 'message' => "Kapasitas melebihi kapasitas ruangan ({$room['capacity']} orang)."];
+        }
+
+        $bookingCode    = self::generateUniqueBookingCode();
+        $token          = self::generateUniqueToken();
+        $expireHours    = (int) getSetting('booking_token_expire_hours', '24');
+        $tokenExpiresAt = date('Y-m-d H:i:s', strtotime($date . ' 23:59:59') + ($expireHours * 3600));
+
+        $bookingData = [
+            'booking_code'      => $bookingCode,
+            'room_id'           => (int) $data['room_id'],
+            'department_id'     => !empty($data['department_id'])   ? (int) $data['department_id']   : null,
+            'meeting_type_id'   => !empty($data['meeting_type_id']) ? (int) $data['meeting_type_id'] : null,
+            'booker_name'       => $data['booker_name'],
+            'booker_nik'        => $data['booker_nik']   ?? null,
+            'booker_email'      => $data['booker_email'],
+            'booker_phone'      => $data['booker_phone'] ?? null,
+            'booking_date'      => $date,
+            'start_time'        => $data['start_time'],
+            'end_time'          => $data['end_time'],
+            'capacity_needed'   => !empty($data['capacity_needed']) ? (int) $data['capacity_needed'] : null,
+            'purpose'           => $data['purpose']          ?? null,
+            'notes_equipment'   => $data['notes_equipment']  ?? null,
+            'notes_other'       => $data['notes_other']      ?? null,
+            'status'            => 'confirmed', // admin-created bookings are auto-confirmed
+            'token'             => $token,
+            'token_expires_at'  => $tokenExpiresAt,
+            'recurring_group_id'=> $recurringGroupId,
+            'booked_by_admin'   => 1,
+        ];
+
+        $lockKey = 'rb_' . (int) $data['room_id'] . '_' . str_replace('-', '', $date);
+        $locked  = (bool) $db->fetchColumn("SELECT GET_LOCK(?, 5)", [$lockKey]);
+
+        if (!$locked) {
+            return ['success' => false, 'message' => $date . ': Sistem sibuk, coba lagi.'];
+        }
+
+        try {
+            if (!self::isRoomAvailable($data['room_id'], $date, $data['start_time'], $data['end_time'])) {
+                return ['success' => false, 'message' => $date . ': Slot waktu sudah dipesan.'];
+            }
+            $bookingId = $db->insert('bookings', $bookingData);
+        } finally {
+            $db->fetchColumn("SELECT RELEASE_LOCK(?)", [$lockKey]);
+        }
+
+        Notification::createForAdmins(
+            'new_booking',
+            'Booking Admin: ' . $room['name'],
+            Auth::user()['name'] . ' membuat booking ' . $room['name'] . ' pada ' . $date,
+            $bookingId,
+            'bookings.approve'
+        );
+
+        // Send confirmation email to booker (non-blocking — fire and forget)
+        $newBooking = $db->fetch(
+            "SELECT b.*, r.name as room_name FROM bookings b JOIN rooms r ON b.room_id = r.id WHERE b.id = ?",
+            [$bookingId]
+        );
+        if ($newBooking) {
+            Mailer::sendBookingConfirmation($newBooking);
+        }
+
+        return ['success' => true, 'booking_id' => $bookingId, 'booking_code' => $bookingCode];
+    }
+
+    /**
+     * Generate list of booking dates for a recurring series.
+     * $repeatType : 'weekly' | 'biweekly'
+     * $daysOfWeek : array of int 0–6 (0=Sun)
+     * $endType    : 'count' | 'date'
+     * $endValue   : int (occurrences) or 'Y-m-d' string
+     */
+    public static function generateRecurringDates(
+        string $startDate,
+        string $repeatType,
+        array  $daysOfWeek,
+        string $endType,
+               $endValue
+    ): array {
+        if (empty($daysOfWeek)) return [];
+
+        sort($daysOfWeek);
+        $stepDays = ($repeatType === 'biweekly') ? 14 : 7;
+        $startTs  = strtotime($startDate);
+        $maxCount = ($endType === 'count') ? max(1, (int) $endValue) : 200;
+        $maxTs    = ($endType === 'date')  ? strtotime($endValue)     : PHP_INT_MAX;
+
+        // Find the Sunday of the week containing $startDate
+        $startDow     = (int) date('w', $startTs); // 0=Sun
+        $weekCurrentTs = $startTs - ($startDow * 86400);
+
+        $dates = [];
+        $iterations = 0;
+
+        while (count($dates) < $maxCount && $iterations < 500) {
+            $iterations++;
+            foreach ($daysOfWeek as $dow) {
+                $d = $weekCurrentTs + ($dow * 86400);
+                if ($d < $startTs) continue;
+                if ($d > $maxTs)   return $dates;
+                if (count($dates) >= $maxCount) return $dates;
+                $dates[] = date('Y-m-d', $d);
+            }
+            $weekCurrentTs += ($stepDays * 86400);
+        }
+
+        return $dates;
     }
 
     /**

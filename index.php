@@ -1322,6 +1322,7 @@ if (!empty($pendingNotifData)) {
         $pendingNotifData['type'],
         $pendingNotifData['title'],
         $pendingNotifData['message'],
-        $pendingNotifData['id']
+        $pendingNotifData['id'],
+        'bookings.approve'
     );
 }

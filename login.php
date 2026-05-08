@@ -21,10 +21,14 @@ if (isPost()) {
         } else {
             $result = Auth::login($username, $password);
             if ($result['success']) {
-                $redirect = $_GET['redirect'] ?? '';
-                // Security: only allow relative redirects
-                if ($redirect && strpos($redirect, '/') === 0 && strpos($redirect, '//') !== 0) {
-                    redirect(BASE_URL . $redirect);
+                $redirect  = $_GET['redirect'] ?? '';
+                $baseHost  = parse_url(BASE_URL, PHP_URL_HOST);
+                // Only allow redirects to same host, block protocol-relative and external URLs
+                if ($redirect && preg_match('#^/[^/\\\\]#', $redirect)) {
+                    $parsed = parse_url(BASE_URL . $redirect);
+                    if (!empty($parsed['host']) && $parsed['host'] === $baseHost) {
+                        redirect(BASE_URL . $redirect);
+                    }
                 }
                 redirect(BASE_URL . '/admin/');
             } else {

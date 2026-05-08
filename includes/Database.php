@@ -27,9 +27,10 @@ class Database
         try {
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
+            error_log('[BookingRoom] Database Connection Error: ' . $e->getMessage());
             die('<div style="font-family:monospace;background:#fee;color:#900;padding:20px;border:1px solid #900;margin:20px">
-                <strong>Database Connection Error:</strong><br>' . htmlspecialchars($e->getMessage()) .
-                '<br><br>Periksa konfigurasi di <code>config/database.php</code>
+                <strong>Database Connection Error.</strong><br>
+                Tidak dapat terhubung ke database. Silakan hubungi administrator sistem.
                 </div>');
         }
     }

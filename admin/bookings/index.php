@@ -6,13 +6,15 @@ $pageTitle = 'Data Booking';
 $db = db();
 
 // Filters
-$status   = qParam('status', '');
-$search   = trim(qParam('search'));
-$roomId   = intVal(qParam('room_id'));
-$dateFrom = qParam('date_from');
-$dateTo   = qParam('date_to');
-$page     = max(1, intVal(qParam('page', 1)));
-$perPage  = DEFAULT_PER_PAGE;
+$status          = qParam('status', '');
+$search          = trim(qParam('search'));
+$roomId          = intVal(qParam('room_id'));
+$dateFrom        = qParam('date_from');
+$dateTo          = qParam('date_to');
+$recurringGroup  = trim(qParam('recurring_group'));
+$onlyRecurring   = (int) qParam('recurring', 0);
+$page            = max(1, intVal(qParam('page', 1)));
+$perPage         = DEFAULT_PER_PAGE;
 
 $where  = ['1=1'];
 $params = [];
@@ -22,17 +24,24 @@ if ($search) {
     $where[] = "(b.booking_code LIKE ? OR b.booker_name LIKE ? OR b.booker_email LIKE ? OR b.booker_nik LIKE ?)";
     $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%"]);
 }
-if ($roomId)   { $where[] = "b.room_id = ?";     $params[] = $roomId; }
-if ($dateFrom) { $where[] = "b.booking_date >= ?"; $params[] = $dateFrom; }
-if ($dateTo)   { $where[] = "b.booking_date <= ?"; $params[] = $dateTo; }
+if ($roomId)        { $where[] = "b.room_id = ?";                $params[] = $roomId; }
+if ($dateFrom)      { $where[] = "b.booking_date >= ?";          $params[] = $dateFrom; }
+if ($dateTo)        { $where[] = "b.booking_date <= ?";          $params[] = $dateTo; }
+if ($recurringGroup)  { $where[] = "b.recurring_group_id = ?";          $params[] = $recurringGroup; }
+if ($onlyRecurring)  { $where[] = "b.recurring_group_id IS NOT NULL"; }
 
 $whereStr = implode(' AND ', $where);
 
 $total = (int) $db->fetchColumn("SELECT COUNT(*) FROM bookings b WHERE $whereStr", $params);
-$pagination = paginate($total, $perPage, $page, BASE_URL . '/admin/bookings/' . '?' . http_build_query(array_filter(compact('status', 'search', 'roomId', 'dateFrom', 'dateTo'))));
+$paginationQuery = array_filter(compact('status', 'search', 'roomId', 'dateFrom', 'dateTo', 'recurringGroup'));
+if ($onlyRecurring) $paginationQuery['recurring'] = 1;
+$pagination = paginate($total, $perPage, $page, BASE_URL . '/admin/bookings/?' . http_build_query($paginationQuery));
 
 $bookings = $db->fetchAll(
-    "SELECT b.*, r.name as room_name, r.code as room_code,
+    "SELECT b.id, b.booking_code, b.booker_name, b.booker_nik, b.booker_email,
+     b.booking_date, b.start_time, b.end_time, b.status, b.created_at,
+     b.checkin_at, b.checkout_at, b.recurring_group_id, b.booked_by_admin,
+     r.name as room_name, r.code as room_code,
      d.name as dept_name, mt.name as type_name,
      u.name as approver_name
      FROM bookings b
@@ -56,6 +65,7 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
     }
     $statusCounts[''] += (int) $row['cnt'];
 }
+$recurringCount = (int) $db->fetchColumn("SELECT COUNT(*) FROM bookings WHERE recurring_group_id IS NOT NULL");
 ?>
 <?php include dirname(__DIR__) . '/layout/header.php'; ?>
 <div class="admin-wrapper">
@@ -74,9 +84,24 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
                 </ol>
             </nav>
         </div>
+        <?php if (Auth::can('bookings.approve')): ?>
+        <a href="<?= BASE_URL ?>/admin/bookings/create.php" class="btn btn-primary btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i>Buat Booking
+        </a>
+        <?php endif; ?>
     </div>
 
     <?= showFlash() ?>
+
+    <?php if ($recurringGroup): ?>
+    <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
+        <i class="bi bi-arrow-repeat fs-5"></i>
+        <div class="flex-grow-1 small">
+            Menampilkan semua booking dalam satu seri berulang.
+        </div>
+        <a href="<?= BASE_URL ?>/admin/bookings/" class="btn btn-sm btn-outline-info">Lihat Semua</a>
+    </div>
+    <?php endif; ?>
 
     <!-- Status Tabs -->
     <div class="d-flex flex-wrap gap-1 mb-3">
@@ -91,13 +116,19 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
         ];
         ?>
         <?php foreach ($tabItems as $s => $tab): ?>
-        <?php $isActive = $status === $s; ?>
+        <?php $isActive = !$onlyRecurring && $status === $s; ?>
         <a href="<?= BASE_URL ?>/admin/bookings/?status=<?= $s ?>"
            class="btn btn-sm btn-<?= $isActive ? $tab['class'] : 'outline-' . $tab['class'] ?>">
             <?= $tab['label'] ?>
             <span class="badge bg-white bg-opacity-25 ms-1"><?= $statusCounts[$s] ?></span>
         </a>
         <?php endforeach; ?>
+        <a href="<?= BASE_URL ?>/admin/bookings/?recurring=1"
+           class="btn btn-sm <?= $onlyRecurring ? 'btn-purple' : 'btn-outline-secondary' ?>"
+           style="<?= $onlyRecurring ? 'background:#6610f2;border-color:#6610f2;color:#fff;' : 'border-color:#6610f2;color:#6610f2;' ?>">
+            <i class="bi bi-arrow-repeat me-1"></i>Berulang
+            <span class="badge bg-white bg-opacity-25 ms-1"><?= $recurringCount ?></span>
+        </a>
     </div>
 
     <!-- Search & Filter -->
@@ -105,6 +136,9 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
         <div class="card-body py-2">
             <form method="GET" class="row g-2 align-items-end">
                 <input type="hidden" name="status" value="<?= e($status) ?>">
+                <?php if ($onlyRecurring): ?>
+                <input type="hidden" name="recurring" value="1">
+                <?php endif; ?>
                 <div class="col-12 col-sm-4 col-md-3">
                     <input type="text" class="form-control form-control-sm" name="search"
                            placeholder="Cari kode, nama, email, NIK..." value="<?= e($search) ?>">
@@ -144,16 +178,16 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 table-bordered">
+                <table class="table table-hover mb-0 table-bordered<?= !empty($bookings) ? ' datatable' : '' ?>" data-no-filter="true">
                     <thead class="text-center">
                         <tr>
-                            <th width="150px">Kode</th>
+                            <th>Kode</th>
                             <th>Pemesanan</th>
                             <th>Ruangan</th>
-                            <th width="150px">Waktu</th>
+                            <th>Waktu</th>
                             <th>Tipe</th>
                             <th>In/Out</th>
-                            <th width="150px">Status</th>
+                            <th>Status</th>
                             <th class="no-sort" style="min-width:50px;">Aksi</th>
                         </tr>
                     </thead>
@@ -163,6 +197,19 @@ foreach ($db->fetchAll("SELECT status, COUNT(*) as cnt FROM bookings GROUP BY st
                             <td class="px-2">
                                 <div>
                                     <code class="text-primary small"><?= e($b['booking_code']) ?></code>
+                                </div>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    <?php if ($b['recurring_group_id']): ?>
+                                    <span class="badge bg-indigo text-white" style="background:#6610f2;font-size:0.65rem;"
+                                          title="Booking berulang">
+                                        <i class="bi bi-arrow-repeat"></i> Berulang
+                                    </span>
+                                    <?php endif; ?>
+                                    <?php if ($b['booked_by_admin']): ?>
+                                    <span class="badge bg-secondary" style="font-size:0.65rem;" title="Dibuat oleh admin">
+                                        <i class="bi bi-shield-check"></i> Admin
+                                    </span>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="text-muted" style="font-size:0.72rem;"><?= timeAgo($b['created_at']) ?></div>
                             </td>

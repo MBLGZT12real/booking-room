@@ -14,7 +14,7 @@ if (isPost() && verifyCsrf()) {
     if ($booking && $action === 'manual_checkin' && $booking['status'] === 'confirmed' && !$booking['checkin_at']) {
         $db->update('bookings', ['checkin_at' => date('Y-m-d H:i:s')], ['id' => $bookingId]);
         Notification::createForAdmins('checkin', 'Check-in Manual: ' . $booking['booking_code'],
-            Auth::user()['name'] . ' melakukan check-in manual untuk booking ' . $booking['booker_name'], $bookingId);
+            Auth::user()['name'] . ' melakukan check-in manual untuk booking ' . $booking['booker_name'], $bookingId, 'checkin.manage');
         flash('success', 'Check-in berhasil dilakukan secara manual.');
     } elseif ($booking && $action === 'manual_checkout' && $booking['checkin_at'] && !$booking['checkout_at']) {
         $db->update('bookings', [
@@ -22,7 +22,7 @@ if (isPost() && verifyCsrf()) {
             'status'      => 'completed',
         ], ['id' => $bookingId]);
         Notification::createForAdmins('checkout', 'Check-out Manual: ' . $booking['booking_code'],
-            Auth::user()['name'] . ' melakukan check-out manual untuk booking ' . $booking['booker_name'], $bookingId);
+            Auth::user()['name'] . ' melakukan check-out manual untuk booking ' . $booking['booker_name'], $bookingId, 'checkin.manage');
         flash('success', 'Check-out berhasil dilakukan secara manual.');
     }
     redirect(BASE_URL . '/admin/checkin/');
@@ -153,6 +153,14 @@ $bookings = $db->fetchAll(
                                     <i class="bi bi-check-circle me-1"></i>
                                     <?= date('H:i', strtotime($b['checkout_at'])) ?>
                                 </span>
+                                <?php elseif ($b['checkin_at'] && $b['checkout_reminder_sent_at']): ?>
+                                <span class="text-muted">-</span>
+                                <div title="Reminder dikirim pukul <?= date('H:i', strtotime($b['checkout_reminder_sent_at'])) ?>">
+                                    <i class="bi bi-bell-fill text-warning" style="font-size:0.75rem;"></i>
+                                    <span style="font-size:0.7rem;" class="text-warning">
+                                        <?= date('H:i', strtotime($b['checkout_reminder_sent_at'])) ?>
+                                    </span>
+                                </div>
                                 <?php else: ?>
                                 <span class="text-muted">-</span>
                                 <?php endif; ?>
