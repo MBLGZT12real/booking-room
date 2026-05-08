@@ -3,7 +3,8 @@
 // Cron Bootstrap — for CLI scripts only (no session, no Auth)
 // ============================================================
 
-if (php_sapi_name() !== 'cli') {
+// Block direct web access — HTTP_HOST hanya ada pada web request, tidak pada CLI/cron
+if (!empty($_SERVER['HTTP_HOST']) || !empty($_SERVER['REMOTE_ADDR'])) {
     http_response_code(403);
     exit('This script can only be run from the command line.');
 }
